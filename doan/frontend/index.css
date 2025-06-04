@@ -1,0 +1,91 @@
+.button-container {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1%;
+  justify-content: center;
+  padding: 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .button-container {
+    flex-wrap: wrap;
+  }
+}
+
+.responsive-btn {
+  font-size: clamp(8px, 1.2vw, 18px) !important;
+  padding: 0.6vw 1.2vw;
+  margin-top: 10px;
+  min-width: 140px;
+  max-width: 180px;
+  flex-shrink: 1;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-break: keep-all;
+}
+
+.btn span {
+  vertical-align: middle;
+}
+
+.shop {
+  padding-top: 20px;
+}
+.card {
+  margin-left: 30px;
+  margin-right: 30px;
+}
+.row-scrollable {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 15px;
+  width: 100%; /* ép chiếm hết ngang */
+  gap: 10px;
+  box-sizing: border-box; /* quan trọng để padding không làm tràn */
+}
+
+.container1 {
+  flex: 3;
+  min-width: 200px;
+  text-align: left;
+}
+
+.container2 {
+  flex: 2;
+  min-width: 120px;
+  text-align: left;
+}
+
+#visaFormContainer {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  position: fixed !important;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 2000;
+  margin-top: 0 !important;
+  padding: 0 !important;
+}
+#visaForm {
+  background: #fff;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.18);
+  border-radius: 12px;
+  padding: 32px 28px;
+  min-width: 350px;
+  max-width: 90vw;
+}

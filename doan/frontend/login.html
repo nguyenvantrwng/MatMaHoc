@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Đăng nhập - Website các môn học</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="d-flex justify-content-center align-items-center vh-100">
+      <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px">
+        <div class="d-flex align-items-center mb-3 gap-3">
+          <img
+            src="img/Logoshop.jpg"
+            alt="Logo Capybara"
+            style="height: 100px; width: 150px; object-fit: contain"
+          />
+          <div>
+            <h6 class="mb-0">Shop Capybara</h6>
+            <strong>Tất cả những gì bạn cần</strong><br />
+            <div class="text-primary fw-bold">Mua cả thế giới</div>
+          </div>
+        </div>
+        <form id="loginForm" autocomplete="off">
+          <div class="mb-3">
+            <input
+              id="username"
+              name="username"
+              type="text"
+              class="form-control"
+              placeholder="Tên đăng nhập"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="pass"
+              name="password"
+              type="password"
+              class="form-control"
+              placeholder="Mật khẩu"
+              required
+            />
+          </div>
+          <div id="otp-section" style="display: none">
+            <div class="text-center mb-2" id="qr-area"></div>
+            <input
+              id="otp"
+              name="otp"
+              type="text"
+              class="form-control mb-2"
+              placeholder="Mã OTP 6 số từ app"
+              minlength="6"
+              maxlength="6"
+              autocomplete="off"
+            />
+            <button
+              id="btnOtpLogin"
+              type="button"
+              class="btn btn-primary w-100 mb-2"
+            >
+              Xác thực OTP
+            </button>
+          </div>
+          <div class="d-flex align-items-center mb-3 gap-3" id="login-btn-row">
+            <button type="submit" class="btn btn-info w-100">Đăng nhập</button>
+            <a href="register.html" class="btn btn-success w-100">Đăng ký</a>
+          </div>
+        </form>
+        <div
+          id="login-error"
+          class="text-danger mt-2"
+          style="min-height: 24px"
+        ></div>
+      </div>
+    </div>
+    <script>
+      let lastUsername = "";
+      let otpInProgress = false;
+
+      document.getElementById("loginForm").onsubmit = async function (e) {
+        e.preventDefault();
+        if (otpInProgress) return; // Đã đến bước OTP thì không submit lại form
+
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("pass").value;
+
+        // Gửi request login_step1.php
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("password", password);
+
+        const res = await fetch("../backend/login_step1.php", {
+          method: "POST",
+          body: formData,
+        });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          document.getElementById("login-error").textContent =
+            "Lỗi máy chủ hoặc kết nối!";
+          return;
+        }
+
+        if (data.success && data.require_otp) {
+          // Đúng user/pass: hiện QR và ô nhập OTP
+          document.getElementById("login-error").textContent = "";
+          lastUsername = username;
+          otpInProgress = true;
+          document.getElementById("otp-section").style.display = "block";
+          document.getElementById("login-btn-row").style.display = "none";
+          document.getElementById("username").readOnly = true;
+          document.getElementById("pass").readOnly = true;
+
+          // Hiện QR code nếu có (lần đầu)
+          if (data.qr_base64) {
+            document.getElementById("qr-area").innerHTML =
+              '<div><b>Quét QR bằng Google Authenticator:</b></div><img src="data:image/png;base64,' +
+              data.qr_base64 +
+              '" style="width:180px;height:180px;border:1px solid #eee;margin:8px auto;display:block" />';
+          } else {
+            document.getElementById("qr-area").innerHTML =
+              "<div><b>Nhập mã OTP 6 số từ app xác thực</b></div>";
+          }
+        } else if (data.token) {
+          // Nếu vì lý do nào đó backend vẫn trả luôn token
+          localStorage.setItem("jwt_token", data.token);
+          localStorage.setItem("user", data.username);
+          localStorage.setItem("id", data.user_id);
+          localStorage.setItem("exp", data.exp);
+          window.location.href = "index.php";
+        } else {
+          document.getElementById("login-error").textContent =
+            data.message || "Đăng nhập thất bại!";
+        }
+      };
+
+      // Xử lý nút xác thực OTP
+      document.getElementById("btnOtpLogin").onclick = async function () {
+        const otp = document.getElementById("otp").value.trim();
+        if (otp.length !== 6 || !/^\d+$/.test(otp)) {
+          document.getElementById("login-error").textContent =
+            "Mã OTP phải là 6 chữ số.";
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append("username", lastUsername);
+        formData.append("otp", otp);
+
+        const res = await fetch("../backend/login_verify_otp.php", {
+          method: "POST",
+          body: formData,
+        });
+
+        let data;
+        try {
+          data = await res.json();
+        } catch (err) {
+          document.getElementById("login-error").textContent =
+            "Lỗi máy chủ hoặc kết nối!";
+          return;
+        }
+
+        if (data.success && data.token) {
+          localStorage.setItem("jwt_token", data.token);
+          localStorage.setItem("user", data.username);
+          localStorage.setItem("id", data.user_id);
+          localStorage.setItem("exp", data.exp);
+          window.location.href = "index.php";
+        } else {
+          document.getElementById("login-error").textContent =
+            data.message || "Xác thực OTP thất bại!";
+          localStorage.removeItem("jwt_token");
+          localStorage.removeItem("user");
+          localStorage.removeItem("id");
+          localStorage.removeItem("exp");
+        }
+      };
+    </script>
+  </body>
+</html>
