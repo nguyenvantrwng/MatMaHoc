@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Đăng ký tài khoản có OTP Modal</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body class="bg-light">
+    <div class="d-flex justify-content-center align-items-center vh-100">
+      <div class="card p-4 shadow" style="width: 100%; max-width: 400px">
+        <h3>Đăng ký tài khoản</h3>
+        <form id="registerForm" novalidate>
+          <div class="mb-3">
+            <input
+              id="email"
+              name="email"
+              type="email"
+              class="form-control"
+              placeholder="Email"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="username"
+              name="user"
+              type="text"
+              class="form-control"
+              placeholder="Tên đăng nhập"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="phone"
+              name="phone"
+              type="text"
+              class="form-control"
+              placeholder="Số điện thoại"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="password"
+              name="pass"
+              type="password"
+              class="form-control"
+              placeholder="Mật khẩu"
+              required
+              minlength="6"
+            />
+          </div>
+          <div class="mb-3">
+            <input
+              id="password2"
+              name="pass2"
+              type="password"
+              class="form-control"
+              placeholder="Nhập lại mật khẩu"
+              required
+              minlength="6"
+            />
+          </div>
+          <button type="button" id="btnContinue" class="btn btn-primary w-100">
+            Tiếp tục
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Modal nhập OTP -->
+    <div
+      class="modal fade"
+      id="otpModal"
+      tabindex="-1"
+      aria-labelledby="otpModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <form id="otpForm" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="otpModalLabel">Nhập mã OTP</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Mã OTP đã được gửi vào email của bạn. Vui lòng nhập mã để xác
+              nhận.
+            </p>
+            <div class="mb-3">
+              <label for="modalEmail" class="form-label"
+                >Email đang xác thực:</label
+              >
+              <input
+                type="text"
+                id="modalEmail"
+                class="form-control"
+                readonly
+              />
+            </div>
+            <input
+              id="otpInput"
+              name="otp"
+              type="text"
+              class="form-control"
+              placeholder="Nhập mã OTP"
+              required
+              minlength="6"
+              maxlength="6"
+            />
+            <div
+              id="otpMessage"
+              class="mt-2 text-danger"
+              style="display: none"
+            ></div>
+            <!-- Ẩn các input chính để gửi kèm trong modal -->
+            <input type="hidden" name="email" id="hiddenEmail" />
+            <input type="hidden" name="user" id="hiddenUser" />
+            <input type="hidden" name="phone" id="hiddenPhone" />
+            <input type="hidden" name="pass" id="hiddenPass" />
+            <input type="hidden" name="pass2" id="hiddenPass2" />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              id="btnSubmitRegister"
+              class="btn btn-success"
+              disabled
+            >
+              Đăng ký
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      const btnContinue = document.getElementById("btnContinue");
+      const emailInput = document.getElementById("email");
+      const usernameInput = document.getElementById("username");
+      const phoneInput = document.getElementById("phone");
+      const passInput = document.getElementById("password");
+      const pass2Input = document.getElementById("password2");
+
+      const otpModal = new bootstrap.Modal(document.getElementById("otpModal"));
+      const otpInput = document.getElementById("otpInput");
+      const otpMessage = document.getElementById("otpMessage");
+      const btnSubmitRegister = document.getElementById("btnSubmitRegister");
+
+      const hiddenEmail = document.getElementById("hiddenEmail");
+      const hiddenUser = document.getElementById("hiddenUser");
+      const hiddenPhone = document.getElementById("hiddenPhone");
+      const hiddenPass = document.getElementById("hiddenPass");
+      const hiddenPass2 = document.getElementById("hiddenPass2");
+      const modalEmail = document.getElementById("modalEmail");
+
+      btnContinue.addEventListener("click", () => {
+        // Normalize email
+        const email = emailInput.value.trim().toLowerCase();
+        const user = usernameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        const pass = passInput.value;
+        const pass2 = pass2Input.value;
+
+        if (!email || !user || !phone || !pass || !pass2) {
+          alert("Vui lòng nhập đầy đủ thông tin.");
+          return;
+        }
+        if (pass.length < 6) {
+          alert("Mật khẩu phải ít nhất 6 ký tự.");
+          return;
+        }
+        if (pass !== pass2) {
+          alert("Mật khẩu không khớp.");
+          return;
+        }
+
+        // Gửi yêu cầu gửi OTP (normalize email)
+        fetch("../backend/send_otp.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: `email=${encodeURIComponent(email)}&user=${encodeURIComponent(
+            user
+          )}&phone=${encodeURIComponent(phone)}`,
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.success) {
+              // Copy dữ liệu sang modal để submit
+              hiddenEmail.value = email;
+              hiddenUser.value = user;
+              hiddenPhone.value = phone;
+              hiddenPass.value = pass;
+              hiddenPass2.value = pass2;
+
+              modalEmail.value = email;
+
+              otpMessage.style.display = "none";
+              otpInput.value = "";
+              btnSubmitRegister.disabled = true;
+              otpModal.show();
+            } else {
+              //alert("Lỗi gửi OTP: " + (data.message || "Vui lòng thử lại"));
+            }
+          })
+          .catch(() => {
+            alert("Lỗi gửi yêu cầu OTP.");
+          });
+      });
+
+      // Kiểm tra OTP hợp lệ khi nhập đủ 6 số
+      otpInput.addEventListener("input", () => {
+        if (otpInput.value.length === 6) {
+          fetch("../backend/verify_otp.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: `email=${encodeURIComponent(
+              hiddenEmail.value.trim().toLowerCase()
+            )}&otp=${encodeURIComponent(otpInput.value)}`,
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.success) {
+                otpMessage.style.color = "green";
+                otpMessage.textContent = "OTP hợp lệ!";
+                otpMessage.style.display = "block";
+                btnSubmitRegister.disabled = false;
+              } else {
+                otpMessage.style.color = "red";
+                otpMessage.textContent = data.message || "OTP không hợp lệ.";
+                otpMessage.style.display = "block";
+                btnSubmitRegister.disabled = true;
+              }
+            })
+            .catch(() => {
+              otpMessage.style.color = "red";
+              otpMessage.textContent = "Lỗi kiểm tra OTP.";
+              otpMessage.style.display = "block";
+              btnSubmitRegister.disabled = true;
+            });
+        } else {
+          otpMessage.style.display = "none";
+          btnSubmitRegister.disabled = true;
+        }
+      });
+      document
+        .getElementById("otpForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+          // Gửi dữ liệu đăng ký vào register.php
+          const formData = new FormData(this);
+          formData.set("email", hiddenEmail.value.trim().toLowerCase());
+
+          fetch("../backend/register.php", {
+            method: "POST",
+            body: formData,
+          })
+            .then((res) => res.text())
+            .then((response) => {
+              try {
+                const data = JSON.parse(response);
+                alert(data.message);
+                if (data.success) {
+                  window.location.href = "login.html";
+                }
+              } catch {
+                document.body.innerHTML = response;
+              }
+            });
+        });
+    </script>
+  </body>
+</html>
